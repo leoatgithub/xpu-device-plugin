@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: xpu-pod
+spec:
+  tolerations:
+  - key: node-role.kubernetes.io/master
+    effect: NoSchedule
+  containers:
+    - name: xpu-container
+      image: ubuntu:16.04
+      command:
+        - /bin/sleep
+        - 10h
+      resources:
+        limits:
+          baidu.com/xpu: 1 # requesting 1 GPUs

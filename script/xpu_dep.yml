@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xpu-deployment-3x1instance
+  labels:
+    app: xpu-app-3x1instance
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: xpu-app-3x1instance
+  template:
+    metadata:
+      labels:
+        app: xpu-app-3x1instance
+    spec:
+      containers:
+      - name: xpu-container-1instance
+        image: ubuntu:16.04
+        command:
+          - /bin/sleep
+          - 10h
+        resources:
+          limits:
+            baidu.com/xpu: 1 # requesting 1 xpu
