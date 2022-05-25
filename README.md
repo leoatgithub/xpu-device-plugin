@@ -27,14 +27,22 @@ XPU device plugin依赖如下几个软硬件环境:
 
 ## 部署Daemonset
 
-运行如下命令部署XPU devcie plugin daemonset:
-
+1. 拉取代码库
 ```
-$ git clone xxx/xpu-device-plugin
+$ git clone https://github.com/kunlunxin/xpu-device-plugin.git
+```
+
+2. 创建xpu-device-plugin service account并赋权
+```
 $ cd xpu-device-plugin
+$ kubectl create -f ./deployment/xpu-device-plugin-rbac.yml
+```
+
+3. 部署XPU devcie plugin daemonset:
+```
 $ kubectl create -f ./deployment/xpu-device-plugin.yml
 ```
-其中xpu-device-plugin.yml文件中默认使用的是昆仑芯官方发布的镜像:
+> 其中xpu-device-plugin.yml文件中默认使用的是昆仑芯官方发布的镜像:
 ```
  - image: kunlunxpu/xpu-device-plugin:v1.0.0
 ```
@@ -102,12 +110,6 @@ XPU device plugin提供了'sriov-num-vfs'配置项用于配置昆仑设备的虚
 
 1. 通过yaml文件的args配置项"--sriov-num-vfs=x"修改，其中'x'为每张卡需要切分的VF个数。
 2. 通过给node添加label修改，label格式为"baidu.com/sriov-num-vfs=x"。
-
-若采用方式2，需执行以下命令为K8S的默认serviceaccount赋权，保证device-plugin具备获取node label的能力：
-```
- kubectl create -f ./deployment/xpu-operator_rbac.authorization.k8s.io_v1_clusterrole.yaml
- kubectl create -f ./deployment/xpu-operator_rbac.authorization.k8s.io_v1_clusterrolebinding.yaml
-```
 
 插件会优先使用label中的配置，若label不存在，则采用yaml文件中的配置，默认的'sriov-num-vfs'配置值为0，即虚拟化功能关闭。
 
