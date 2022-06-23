@@ -28,8 +28,9 @@ replace (
 
 require (
 	github.com/fsnotify/fsnotify v1.4.9
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/kunlunxin/go-xpuml v0.0.0-20220507093939-c13d5f5fb7c4
-	golang.org/x/net v0.0.0-20200421231249-e086a090c8fd
+	golang.org/x/net v0.0.0-20201021035429-f5854403a974
 	google.golang.org/grpc v1.29.0
 	k8s.io/api v0.18.2
 	k8s.io/apimachinery v0.23.5
