@@ -35,7 +35,7 @@ import (
 )
 
 var useFakeDev = flag.Bool("use-fake-dev", false, "use /fake_dev ?")
-var vfNum = flag.Int("sriov-num-vfs", 0, "SR-IOV virtual function number per xpu")
+var vfNum = flag.Int("sriov-num-vfs", 99, "SR-IOV virtual function number per xpu")
 
 const (
 	envDisableHealthChecks = "DP_DISABLE_HEALTHCHECKS"
@@ -44,8 +44,25 @@ const (
 	labelSriovVfNum        = "baidu.com/sriov-num-vfs"
 )
 
+const (
+    XPUML_DEVICE_MODEL_UNKNOWN                        = 9999
+
+    XPUML_DEVICE_MODEL_KL1_K200                       = 0
+    XPUML_DEVICE_MODEL_KL1_K100                       = 1
+
+    XPUML_DEVICE_MODEL_KL2_R200                       = 2
+    XPUML_DEVICE_MODEL_KL2_R300                       = 3
+    XPUML_DEVICE_MODEL_KL2_R200_8F                    = 4
+
+    XPUML_DEVICE_MODEL_KL2_R200_SRIOV_PF              = 200
+    XPUML_DEVICE_MODEL_KL2_R200_SRIOV_VF_ONE_OF_ONE   = 201
+    XPUML_DEVICE_MODEL_KL2_R200_SRIOV_VF_ONE_OF_TWO   = 202
+    XPUML_DEVICE_MODEL_KL2_R200_SRIOV_VF_ONE_OF_THREE = 203
+)
+
 type Device struct {
 	pluginapi.Device
+	Model         string
 	HostPath      string
 	ContainerPath string
 }
@@ -130,11 +147,45 @@ func SetVfNum() {
 			continue
 		}
 
+		// default value is 99, means got no params from label or file, skip VF configuration
+		if *vfNum == 99 {
+			continue
+		}
+
 		err := xpuml.DeviceSetSriovVfNum(device, int32(*vfNum))
 		if err == xpuml.SUCCESS {
 			time.Sleep(time.Second)
 		}
 	}
+}
+
+func getModelNameByModelId(modelId int32) string {
+	model := ""
+	switch modelId {
+	case XPUML_DEVICE_MODEL_UNKNOWN:
+		model = "unknow"
+	case XPUML_DEVICE_MODEL_KL1_K100:
+		model = "K100"
+	case XPUML_DEVICE_MODEL_KL1_K200:
+		model = "K200"
+	case XPUML_DEVICE_MODEL_KL2_R200:
+		model = "R200"
+	case XPUML_DEVICE_MODEL_KL2_R300:
+		model = "R300"
+	case XPUML_DEVICE_MODEL_KL2_R200_8F:
+		model = "R200-8F"
+	case XPUML_DEVICE_MODEL_KL2_R200_SRIOV_PF:
+		model = "R200-PF"
+	case XPUML_DEVICE_MODEL_KL2_R200_SRIOV_VF_ONE_OF_ONE:
+		model = "R200-VF-16G"
+	case XPUML_DEVICE_MODEL_KL2_R200_SRIOV_VF_ONE_OF_TWO:
+		model = "R200-VF-8G"
+	case XPUML_DEVICE_MODEL_KL2_R200_SRIOV_VF_ONE_OF_THREE:
+		model = "R200-VF-5G"
+	default:
+		model = "unknow"
+	}
+	return model
 }
 
 func (g *XPUDeviceManager) Devices() []*Device {
@@ -167,11 +218,13 @@ func (g *XPUDeviceManager) Devices() []*Device {
 		if mode == xpuml.HOST_VXPU_MODE_SRIOV_ON {
 			log.Printf("Info: Path %s is PF node", test_path)
 		} else {
+			attr, _ := xpuml.DeviceGetAttributes(device)
+			model := getModelNameByModelId(attr.ModelId)
 			if _, err := os.Stat(test_path); err == nil {
 				log.Printf("Info: Path %s is OK", test_path)
 				host_path := fmt.Sprintf("%s/xpu%d", host_path_prefix, i)
 				container_path := fmt.Sprintf("%s/xpu%d", container_path_prefix, i)
-				devs = append(devs, buildDevice(uint(i), host_path, container_path))
+				devs = append(devs, buildDevice(uint(i), model, host_path, container_path))
 			}
 		}
 	}
@@ -183,10 +236,11 @@ func (g *XPUDeviceManager) CheckHealth(stop <-chan interface{}, devices []*Devic
 	checkHealth(stop, devices, unhealthy)
 }
 
-func buildDevice(i uint, hp string, cp string) *Device {
+func buildDevice(i uint, model string, hp string, cp string) *Device {
 	dev := Device{}
 	dev.ID = fmt.Sprintf("%d", i)
 	dev.Health = pluginapi.Healthy
+	dev.Model = model
 	dev.HostPath = hp
 	dev.ContainerPath = cp
 	return &dev
