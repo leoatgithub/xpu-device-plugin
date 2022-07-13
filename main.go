@@ -78,7 +78,7 @@ restart:
 		}
 
 		// Update ResourceName by model
-		if *resByModel {
+		if *useDetailResName {
 			model := devs[0].Model
 			for _, dev := range devs {
 				// hybrid model(K200 or R200) or type(PF or VF) between xpus on one host is not support now, goto restart
