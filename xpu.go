@@ -36,6 +36,7 @@ import (
 
 var useFakeDev = flag.Bool("use-fake-dev", false, "use /fake_dev ?")
 var vfNum = flag.Int("sriov-num-vfs", 99, "SR-IOV virtual function number per xpu")
+var resByModel = flag.Bool("res-by-model", false, "register 'ResourceName' base on xpu-model or default: baidu.com/xpu")
 
 const (
 	envDisableHealthChecks = "DP_DISABLE_HEALTHCHECKS"

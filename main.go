@@ -77,16 +77,19 @@ restart:
 			continue
 		}
 
-		// Get model from devices, only support unique model(K200 or R200) and unique type(PF or VF)
-		model := devs[0].Model
-		for _, dev := range devs {
-			if model != dev.Model {
-				log.Fatalf("All devs on node must be the same model or VF spec, but get: %s and %s", model, dev.Model)
-				close(pluginStartError)
-				goto events
+		// Update ResourceName by model
+		if *resByModel {
+			model := devs[0].Model
+			for _, dev := range devs {
+				// hybrid model(K200 or R200) or type(PF or VF) between xpus on one host is not support now, goto restart
+				if model != dev.Model {
+					log.Fatalf("All devs on node must be the same model or VF spec, but get: %s and %s", model, dev.Model)
+					close(pluginStartError)
+					goto events
+				}
 			}
+			p.resourceName = fmt.Sprintf("baidu.com/%s", model)
 		}
-		p.resourceName = fmt.Sprintf("baidu.com/%s", model)
 
 		// Start the gRPC server for plugin p and connect it with the kubelet.
 		if err := p.Start(); err != nil {
